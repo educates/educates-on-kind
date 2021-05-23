@@ -13,37 +13,18 @@ fi
 REGISTRY_NAME=${REGISTRY_NAME:-kind-registry}
 REGISTRY_PORT=${REGISTRY_PORT:-5000}
 
+SECURITY_POLICIES=${SECURITY_POLICIES:-true}
+
 # Create the image registry.
 
 ./create-registry.sh
 
 # Create the kind cluster.
 
-CONTAINERD_CONFIGD_PATCHES=""
+KUBEADM_CONFIG_PATCHES="  kubeadmConfigPatches: []"
 
-if [ x"$INGRESS_DOMAIN" != x"" ]; then
-    read -r -d '' CONTAINERD_CONFIGD_PATCHES <<EOF || true
-containerdConfigPatches:
-- |-
-  [plugins."io.containerd.grpc.v1.cri".registry.mirrors."registry.$INGRESS_DOMAIN:${REGISTRY_PORT}"]
-    endpoint = ["http://${REGISTRY_NAME}:${REGISTRY_PORT}"]
-  [plugins."io.containerd.grpc.v1.cri".registry.mirrors."localhost:${REGISTRY_PORT}"]
-    endpoint = ["http://${REGISTRY_NAME}:${REGISTRY_PORT}"]
-EOF
-else
-    read -r -d '' CONTAINERD_CONFIGD_PATCHES <<EOF || true
-containerdConfigPatches:
-- |-
-  [plugins."io.containerd.grpc.v1.cri".registry.mirrors."localhost:${REGISTRY_PORT}"]
-    endpoint = ["http://${REGISTRY_NAME}:${REGISTRY_PORT}"]
-EOF
-fi
-
-cat <<EOF | kind create cluster --name kind --config=-
-kind: Cluster
-apiVersion: kind.x-k8s.io/v1alpha4
-nodes:
-- role: control-plane
+if [ x"$SECURITY_POLICIES" != x"false" ]; then
+    read -r -d '' KUBEADM_CONFIG_PATCHES <<EOF || true
   kubeadmConfigPatches:
   - |
     kind: InitConfiguration
@@ -57,6 +38,44 @@ nodes:
     apiServer:
       extraArgs:
         enable-admission-plugins: PodSecurityPolicy
+EOF
+else
+    read -r -d '' KUBEADM_CONFIG_PATCHES <<EOF || true
+  kubeadmConfigPatches:
+  - |
+    kind: InitConfiguration
+    nodeRegistration:
+      kubeletExtraArgs:
+        node-labels: "ingress-ready=true"
+EOF
+fi
+
+CONTAINERD_CONFIG_PATCHES="containerdConfigPatches: []"
+
+if [ x"$INGRESS_DOMAIN" != x"" ]; then
+    read -r -d '' CONTAINERD_CONFIG_PATCHES <<EOF || true
+containerdConfigPatches:
+- |-
+  [plugins."io.containerd.grpc.v1.cri".registry.mirrors."registry.$INGRESS_DOMAIN:${REGISTRY_PORT}"]
+    endpoint = ["http://${REGISTRY_NAME}:${REGISTRY_PORT}"]
+  [plugins."io.containerd.grpc.v1.cri".registry.mirrors."localhost:${REGISTRY_PORT}"]
+    endpoint = ["http://${REGISTRY_NAME}:${REGISTRY_PORT}"]
+EOF
+else
+    read -r -d '' CONTAINERD_CONFIG_PATCHES <<EOF || true
+containerdConfigPatches:
+- |-
+  [plugins."io.containerd.grpc.v1.cri".registry.mirrors."localhost:${REGISTRY_PORT}"]
+    endpoint = ["http://${REGISTRY_NAME}:${REGISTRY_PORT}"]
+EOF
+fi
+
+cat <<EOF | kind create cluster --name kind --config=-
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+nodes:
+- role: control-plane
+  ${KUBEADM_CONFIG_PATCHES}
   extraPortMappings:
   - containerPort: 80
     hostPort: 80
@@ -64,7 +83,7 @@ nodes:
   - containerPort: 443
     hostPort: 443
     protocol: TCP
-$CONTAINERD_CONFIGD_PATCHES
+${CONTAINERD_CONFIG_PATCHES}
 EOF
 
 # Connect the image registry to the cluster network.
@@ -87,18 +106,21 @@ EOF
 
 # Create pod security polices and corresponding roles and bindings.
 
-kubectl apply -f policy-resources/privileged-psp.yaml
-kubectl apply -f policy-resources/baseline-psp.yaml
-kubectl apply -f policy-resources/restricted-psp.yaml
+if [ x"$SECURITY_POLICIES" != x"false" ]; then
+    kubectl apply -f policy-resources/privileged-psp.yaml
+    kubectl apply -f policy-resources/baseline-psp.yaml
+    kubectl apply -f policy-resources/restricted-psp.yaml
 
-kubectl apply -f policy-resources/cluster-roles.yaml
-kubectl apply -f policy-resources/role-bindings.yaml
+    kubectl apply -f policy-resources/cluster-roles.yaml
+    kubectl apply -f policy-resources/role-bindings.yaml
+fi
 
 # Deploy Contour ingress controller.
 
-kubectl create ns projectcontour
-
-kubectl apply -f contour-resources/role-binding.yaml
+if [ x"$SECURITY_POLICIES" != x"false" ]; then
+    kubectl create ns projectcontour
+    kubectl apply -f contour-resources/role-binding.yaml
+fi
 
 kubectl apply -f https://projectcontour.io/quickstart/contour.yaml
 
