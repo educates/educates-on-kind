@@ -9,7 +9,12 @@ if [ -f local-settings.env ]; then
 fi
 
 EDUCATES_VERSION=${EDUCATES_VERSION:-master}
+SOURCE_REPOSITORY=${SOURCE_REPOSITORY:-}
 
 # Delete Educates.
 
-kubectl delete -k "github.com/eduk8s/eduk8s?ref=${EDUCATES_VERSION}"
+if [ x"$SOURCE_REPOSITORY" != x"" ]; then
+    kubectl delete -k "$SOURCE_REPOSITORY"
+else
+    kubectl delete -k "github.com/eduk8s/eduk8s?ref=$EDUCATES_VERSION"
+fi

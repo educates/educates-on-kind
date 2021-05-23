@@ -9,10 +9,15 @@ if [ -f local-settings.env ]; then
 fi
 
 EDUCATES_VERSION=${EDUCATES_VERSION:-master}
+SOURCE_REPOSITORY=${SOURCE_REPOSITORY:-}
 
 # Deploy Educates.
 
-kubectl apply -k "github.com/eduk8s/eduk8s?ref=${EDUCATES_VERSION}"
+if [ x"$SOURCE_REPOSITORY" != x"" ]; then
+    kubectl apply -k "$SOURCE_REPOSITORY"
+else
+    kubectl apply -k "github.com/eduk8s/eduk8s?ref=$EDUCATES_VERSION"
+fi
 
 # Wait for Educates operator to finish deploying.
 
