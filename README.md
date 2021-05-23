@@ -118,7 +118,7 @@ The password for accessing the tutorials is ``educates``.
 The Educates tutorials can be deleted by running:
 
 ```
-kubectl apply -k github.com/educates/educates-tutorials
+kubectl delete -k github.com/educates/educates-tutorials
 ```
 
 Registry
