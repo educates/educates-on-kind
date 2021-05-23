@@ -94,30 +94,6 @@ by running:
 ./deploy-educates.sh
 ```
 
-Deletion
---------
-
-To delete the Kind cluster you can run:
-
-```
-./delete-cluster.sh
-```
-
-If you only wanted to delete Educates you could have run:
-
-```
-./delete-educates.sh
-```
-
-Even after the Kind cluster has been deleted, the local image registry will
-still exist as it runs directly in the local ``docker`` runtime.
-
-To delete the image registry you can run:
-
-```
-./delete-registry.sh
-```
-
 Testing
 -------
 
@@ -184,3 +160,27 @@ REGISTRY_HOST=0.0.0.0
 
 to ``local-settings.env`` before the image registry gets created as part
 of creating the Kind cluster the first time.
+
+Deletion
+--------
+
+To delete the Kind cluster you can run:
+
+```
+./delete-cluster.sh
+```
+
+If you only wanted to delete Educates you could have run:
+
+```
+./delete-educates.sh
+```
+
+Even after the Kind cluster has been deleted, the local image registry will
+still exist as it runs directly in the local ``docker`` runtime.
+
+To delete the image registry you can run:
+
+```
+./delete-registry.sh
+```
