@@ -101,7 +101,7 @@ Once the Kind cluster has been created and Educates installed, to test that
 Educates is working, you can deploy the Educates tutorials by running:
 
 ```
-kubectl apply -k github.com/eduk8s/eduk8s-tutorials
+kubectl apply -k github.com/educates/educates-tutorials
 ```
 
 Note that the first time deploying and accessing any Educates workshop will
@@ -110,7 +110,7 @@ be slower as the various container images will need to be pulled down.
 To get the URL for accessing the tutorials run:
 
 ```
-kubectl get trainingportal/eduk8s-tutorials
+kubectl get trainingportal/educates-tutorials
 ```
 
 The password for accessing the tutorials is ``educates``.
@@ -118,7 +118,7 @@ The password for accessing the tutorials is ``educates``.
 The Educates tutorials can be deleted by running:
 
 ```
-kubectl apply -k github.com/eduk8s/eduk8s-tutorials
+kubectl apply -k github.com/educates/educates-tutorials
 ```
 
 Registry
