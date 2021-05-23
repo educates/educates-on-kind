@@ -15,5 +15,7 @@ spec:
       robot:
         id: robot
         secret: robot
+  storage:
+    group: 1
   dockerd:
     mtu: 1350
