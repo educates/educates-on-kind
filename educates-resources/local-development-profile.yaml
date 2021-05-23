@@ -1,0 +1,26 @@
+apiVersion: training.eduk8s.io/v1alpha1
+kind: SystemProfile
+metadata:
+  name: local-development-profile
+spec:
+  portal:
+    #image: localhost:5000/eduk8s-portal:latest
+    credentials:
+      admin:
+        username: educates
+        password: my-pasword
+      robot:
+        username: robot@educates
+        password: my-pasword
+    clients:
+      robot:
+        id: robot
+        secret: robot
+  dockerd:
+    mtu: 1350
+  #workshop:
+  #  images:
+  #    base-environment:*: localhost:5000/base-environment:latest
+  #    jdk8-environment:*: localhost:5000/jdk8-environment:latest
+  #    jdk11-environment:*: localhost:5000/jdk11-environment:latest
+  #    conda-environment:*: localhost:5000/conda-environment:latest

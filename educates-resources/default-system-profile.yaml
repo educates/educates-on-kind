@@ -1,0 +1,19 @@
+apiVersion: training.eduk8s.io/v1alpha1
+kind: SystemProfile
+metadata:
+  name: default-system-profile
+spec:
+  portal:
+    credentials:
+      admin:
+        username: educates
+        password: my-pasword
+      robot:
+        username: robot@educates
+        password: my-pasword
+    clients:
+      robot:
+        id: robot
+        secret: robot
+  dockerd:
+    mtu: 1350

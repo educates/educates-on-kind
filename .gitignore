@@ -1,0 +1,3 @@
+local-settings.env
+educates-resources/*-tls.yaml
+educates-resources/*.*.*-profile.yaml
