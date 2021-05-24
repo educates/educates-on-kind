@@ -14,6 +14,7 @@ REGISTRY_NAME=${REGISTRY_NAME:-kind-registry}
 REGISTRY_PORT=${REGISTRY_PORT:-5000}
 
 SECURITY_POLICIES=${SECURITY_POLICIES:-true}
+KAPP_CONTROLLER=${KAPP_CONTROLLER:-false}
 
 # Create the image registry.
 
@@ -113,6 +114,12 @@ if [ x"$SECURITY_POLICIES" != x"false" ]; then
 
     kubectl apply -f policy-resources/cluster-roles.yaml
     kubectl apply -f policy-resources/role-bindings.yaml
+fi
+
+# Deploy kapp controller.
+
+if [ x"$KAPP_CONTROLLER" != x"false" ]; then
+    kapp deploy --app kc --yes -f https://raw.githubusercontent.com/vmware-tanzu/carvel-kapp-controller/develop/alpha-releases/v0.19.0-alpha.8.yml
 fi
 
 # Deploy Contour ingress controller.
