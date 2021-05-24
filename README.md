@@ -10,7 +10,10 @@ Educates or for local creation of Educates workshop content.
 
 The scripts assume you aren't already running a Kind cluster.
 
-You will need to have ``docker`` and ``kind`` installed.
+You will need to have ``docker`` and ``kind`` installed, and if using Docker
+Desktop ensure you have configured it with enough memory resources to be able
+to run a Kind Kubernetes cluster with Educates, as well as the hosted
+workshops.
 
 Configuration
 -------------
