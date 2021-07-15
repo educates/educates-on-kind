@@ -146,7 +146,7 @@ by setting the ``spec.content.image`` field.
 For workshop content, you can use the command:
 
 ```
-imgpkg push -i ${INGRESS_DOMAIN}:5000/workshop-content:latest --registry-insecure -f .
+imgpkg push -i registry.${INGRESS_DOMAIN}:5000/workshop-content:latest --registry-insecure -f .
 ```
 
 to create the OCI artifact for the workshop content and push it to the
@@ -155,7 +155,7 @@ image registry. You can then reference the workshop content in a
 ``spec.content.files`` field to a value of the form:
 
 ```
-imgpkg+http://${INGRESS_DOMAIN}:5000/workshop-content:latest
+imgpkg+http://registry.${INGRESS_DOMAIN}:5000/workshop-content:latest
 ```
 
 Access to the image registry is always over an insecure connection.
