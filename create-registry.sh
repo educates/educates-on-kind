@@ -24,7 +24,6 @@ REGISTRY_ARGS="-v `pwd`/educates-resources:/files"
 if [ -f "educates-resources/$INGRESS_DOMAIN-tls.crt" -a \
      -f "educates-resources/$INGRESS_DOMAIN-tls.key" ]; then
     REGISTRY_PORT=${REGISTRY_PORT:-5443}
-    REGISTRY_HOST=0.0.0.0
 
     REGISTRY_ARGS="$REGISTRY_ARGS -e REGISTRY_HTTP_TLS_CERTIFICATE=/files/$INGRESS_DOMAIN-tls.crt"
     REGISTRY_ARGS="$REGISTRY_ARGS -e REGISTRY_HTTP_TLS_KEY=/files/$INGRESS_DOMAIN-tls.key"
