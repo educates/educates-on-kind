@@ -196,8 +196,9 @@ You can then reference the custom workshop image in a ``Workshop``
 definition from the same image location by setting the
 ``spec.content.image`` field to the same image reference.
 
-If you have exposed the local image registry to the local network, you can
-instead in each case also use:
+If you have exposed the local image registry to the local network, and your
+local docker daemon has also been configured to trust the registry hostname
+even though insecure, you can instead in each case also use:
 
 ```
 registry.${INGRESS_DOMAIN}:5000/custom-workshop-image:latest
