@@ -26,7 +26,7 @@ specific IP address by updating DNS, you will need to use a ``nip.io``
 address.
 
 In this case, calculate the IP address of your local machine where the Kind
-cluster is to be run.
+cluster is to be run. You cannot use ``127.0.0.1`` or ``localhost`` for this.
 
 Create a file called ``local-settings.env`` in this directory and add to it:
 
@@ -36,8 +36,9 @@ INGRESS_DOMAIN=192.168.1.1.nip.io
 
 Replace ``192.168.1.1`` with the IP address of your local machine.
 
-If you have your own domain name, you should create a wildcard sub domain and
-map that to the IP address of your local machine.
+If you have your own domain name, you can create a wildcard sub domain and
+map that to the IP address of your local machine in the DNS server which you
+use to manage your domain.
 
 For example, if you owned the domain name ``educates.io``, you would create
 a wildcard sub domain something like ``*.labs.educates.io`` mapping to the
@@ -81,6 +82,72 @@ kubectl create secret tls ${INGRESS_DOMAIN}-tls \
  --dry-run=client -o yaml > educates-resources/${INGRESS_DOMAIN}-tls.yaml
 ```
 
+To accompany the Kind cluster, an image registry is deployed direct to
+the local ``docker`` runtime. That is, not within the Kind cluster itself.
+
+This image registry can be used to hold custom workshop images or OCI image
+artifacts holding workshop content for Educates. It can also be used when
+testing disconnected installs of Educates.
+
+If you do not intend using the local image registry you can skip down to
+installation, otherwise continue with the configuration steps.
+
+The local image registry will by default not require authentication. To
+enable authentication create a file with the credentials using
+``htpasswd``. Call this file ``educates-resources/htpasswd``. Ensure that
+``bcrypt`` is used when encrypting the password.
+
+```
+htpasswd -Bbn educates educates > educates-resources/htpasswd
+```
+
+Enabling authentication is not required, but should be done if access to
+the local image registry from outside of the local machine is required and
+you are not on a private network.
+
+When authentication is enabled you will be required to login to the image
+registry before you can push images to it using ``docker``, and image pull
+secrets will need to be used with deployments created in the Kubernetes
+cluster. If using others tools such as ``skopeo`` or ``imgpkg`` and you
+haven't logged into the local image registry using ``docker`` you would
+need to supply credentials to those tools on the command line as necessary.
+
+Even when supplying a certificate to enable secure ingress for Educates,
+access to the local image registry will still by default be insecure.
+
+If you want access to the local image registry to also be secure, you need
+to copy the original certificate and private key into the
+``educates-resources`` directory before the image local image registry is
+created.
+
+```
+cp $HOME/.letsencrypt/config/live/${INGRESS_DOMAIN}/fullchain.pem educates-resources/${INGRESS_DOMAIN}-tls.crt
+cp $HOME/.letsencrypt/config/live/${INGRESS_DOMAIN}/privkey.pem educates-resources/${INGRESS_DOMAIN}-tls.key
+```
+
+If you need to make the local iamge registry accessible on your local
+network so you can push images to it from another machine, you can add:
+
+```
+REGISTRY_HOST=0.0.0.0
+```
+
+to ``local-settings.env`` before the image registry gets created.
+
+Note that access to the local image registry must be secure and the local
+image registry exposed to the local network if using ``imgpkg copy`` to do
+testing of disconnected installation of Educates.
+
+Also, you will need to allow access from the local network if wishing to
+use the local image registry to host workshop content as an OCI image
+artifact.
+
+In these latter two cases exposing the local image registry to the local
+network is required because normally the image registry would only listen
+for connections on ``localhost``, but in these cases it must be able to
+accept connections on the IP address of your local machine as that is what
+the fully qualified hostname in DNS will map to.
+
 Installation
 ------------
 
@@ -95,6 +162,86 @@ by running:
 
 ```
 ./deploy-educates.sh
+```
+
+Registry
+--------
+
+By default access to the image registry will be over an insecure connection
+and there is no authentication so anyone can push images to the image
+registry. The image registry will also by default only be accessible from
+your local machine.
+
+When building images and pushing them to the local image registry, you
+should use the registry server address of ``localhost:5000`` when insecure
+connections are being used. Deployments made in the Kind cluster can also
+use ``localhost:5000`` when referring to images stored in the local image
+registry and these will be automatically mapped through to the local image
+registry.
+
+The local docker daemon when doing a push should automatically accept the
+local image registry as being insecure. Other tools such as ``skopeo`` or
+``imgpkg`` may need to be told to accept the local image registry as being
+insecure.
+
+If building a custom workshop image, you can tag it as:
+
+```
+localhost:5000/custom-workshop-image:latest
+```
+
+and then push it to the local image registry.
+
+You can then reference the custom workshop image in a ``Workshop``
+definition from the same image location by setting the
+``spec.content.image`` field to the same image reference.
+
+If you have exposed the local image registry to the local network, you can
+instead in each case also use:
+
+```
+registry.${INGRESS_DOMAIN}:5000/custom-workshop-image:latest
+```
+
+The local image registry can be used to host workshop content as an OCI
+image artifact, but this will only work if you have exposed the local image
+registry to the local network.
+
+To create the OCI image artifact for the workshop content use the command:
+
+```
+imgpkg push -i registry.${INGRESS_DOMAIN}:5000/workshop-content:latest --registry-insecure -f .
+```
+
+When referencing the workshop content in a ``Workshop`` definition from the
+same image location by setting the ``spec.content.files`` field, use a
+value of the form:
+
+```
+imgpkg+http://registry.${INGRESS_DOMAIN}:5000/workshop-content:latest
+```
+
+If you have enabled secure access to the local image registry, the port
+number for the local image registry will be different, with it being
+changed from ``5000`` to ``5443``. You also will not need to use the
+``--registry-insecure`` option with ``imgpkg push``. Where a URI is used
+and it specifies the protocol of ``http``, this should be changed to
+``https``.
+
+If you have enabled authentication for the local image registry you will be
+required to login to the image registry before you can push images to it
+using ``docker``, and image pull secrets will need to be used with
+deployments created in the Kubernetes cluster. If using others tools such
+as ``skopeo`` or ``imgpkg`` and you haven't logged into the local image
+registry using ``docker`` you would need to supply credentials to those
+tools on the command line as necessary.
+
+In the case of workshop content packaged as an OCI image artifact, you will
+need to supply any image registry credentials in the value set using
+``spec.content.files``.
+
+```
+imgpkg+https://educates:educates@registry.${INGRESS_DOMAIN}:5443/workshop-content:latest
 ```
 
 Testing
@@ -123,55 +270,6 @@ The Educates tutorials can be deleted by running:
 ```
 kubectl delete -k github.com/educates/educates-tutorials
 ```
-
-Registry
---------
-
-To accompany the Kind cluster, an image registry is deployed direct to
-the local ``docker`` runtime. That is, not within the Kind cluster itself.
-
-This image registry can be used to hold custom workshop images or OCI
-image artifacts holding workshop content for Educates.
-
-If building a custom workshop image, tag it as:
-
-```
-registry.${INGRESS_DOMAIN}:5000/custom-workshop-image:latest
-```
-
-and push it to the image registry. You can then reference the custom
-workshop image in a ``Workshop`` definition from the same image location
-by setting the ``spec.content.image`` field.
-
-For workshop content, you can use the command:
-
-```
-imgpkg push -i registry.${INGRESS_DOMAIN}:5000/workshop-content:latest --registry-insecure -f .
-```
-
-to create the OCI artifact for the workshop content and push it to the
-image registry. You can then reference the workshop content in a
-``Workshop`` definition from the same image location by setting the
-``spec.content.files`` field to a value of the form:
-
-```
-imgpkg+http://registry.${INGRESS_DOMAIN}:5000/workshop-content:latest
-```
-
-Access to the image registry is always over an insecure connection.
-There is no authentication so anyone can push images to the image
-registry.
-
-By default the image registry will only be accessible from your local
-machine. If you want to make it accessible on your local network so you
-can push images to it from another machine, you can add:
-
-```
-REGISTRY_HOST=0.0.0.0
-```
-
-to ``local-settings.env`` before the image registry gets created as part
-of creating the Kind cluster the first time.
 
 Deletion
 --------

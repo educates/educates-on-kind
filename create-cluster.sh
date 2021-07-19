@@ -11,7 +11,14 @@ if [ -f local-settings.env ]; then
 fi
 
 REGISTRY_NAME=${REGISTRY_NAME:-kind-registry}
-REGISTRY_PORT=${REGISTRY_PORT:-5000}
+
+if [ x"$INGRESS_DOMAIN" != x"" -a \
+     -f "educates-resources/$INGRESS_DOMAIN-tls.crt" -a \
+     -f "educates-resources/$INGRESS_DOMAIN-tls.key" ]; then
+    REGISTRY_PORT=${REGISTRY_PORT:-5443}
+else
+    REGISTRY_PORT=${REGISTRY_PORT:-5000}
+fi
 
 SECURITY_POLICIES=${SECURITY_POLICIES:-true}
 KAPP_CONTROLLER=${KAPP_CONTROLLER:-false}
@@ -54,7 +61,18 @@ fi
 CONTAINERD_CONFIG_PATCHES="containerdConfigPatches: []"
 
 if [ x"$INGRESS_DOMAIN" != x"" ]; then
-    read -r -d '' CONTAINERD_CONFIG_PATCHES <<EOF || true
+    if [ -f "educates-resources/$INGRESS_DOMAIN-tls.crt" -a \
+         -f "educates-resources/$INGRESS_DOMAIN-tls.key" ]; then
+        read -r -d '' CONTAINERD_CONFIG_PATCHES <<EOF || true
+containerdConfigPatches:
+- |-
+  [plugins."io.containerd.grpc.v1.cri".registry.mirrors."registry.$INGRESS_DOMAIN:${REGISTRY_PORT}"]
+    endpoint = ["https://${REGISTRY_NAME}:${REGISTRY_PORT}"]
+  [plugins."io.containerd.grpc.v1.cri".registry.mirrors."localhost:${REGISTRY_PORT}"]
+    endpoint = ["https://${REGISTRY_NAME}:${REGISTRY_PORT}"]
+EOF
+    else
+        read -r -d '' CONTAINERD_CONFIG_PATCHES <<EOF || true
 containerdConfigPatches:
 - |-
   [plugins."io.containerd.grpc.v1.cri".registry.mirrors."registry.$INGRESS_DOMAIN:${REGISTRY_PORT}"]
@@ -62,6 +80,7 @@ containerdConfigPatches:
   [plugins."io.containerd.grpc.v1.cri".registry.mirrors."localhost:${REGISTRY_PORT}"]
     endpoint = ["http://${REGISTRY_NAME}:${REGISTRY_PORT}"]
 EOF
+    fi
 else
     read -r -d '' CONTAINERD_CONFIG_PATCHES <<EOF || true
 containerdConfigPatches:

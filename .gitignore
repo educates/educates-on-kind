@@ -1,3 +1,11 @@
 local-settings.env
 educates-resources/*-tls.yaml
 educates-resources/*.*.*-profile.yaml
+educates-resources/*.htpasswd
+educates-resources/htpasswd
+*.key
+*.pem
+*.csr
+*.crt
+*.srl
+*.ext
