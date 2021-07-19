@@ -138,7 +138,7 @@ fi
 # Deploy kapp controller.
 
 if [ x"$KAPP_CONTROLLER" != x"false" ]; then
-    kapp deploy --app kc --yes -f https://raw.githubusercontent.com/vmware-tanzu/carvel-kapp-controller/develop/alpha-releases/v0.19.0-alpha.9.yml
+    kapp deploy -a kc --yes -f https://github.com/vmware-tanzu/carvel-kapp-controller/releases/latest/download/release.yml
 fi
 
 # Deploy Contour ingress controller.
