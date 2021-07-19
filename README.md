@@ -116,7 +116,7 @@ Even when supplying a certificate to enable secure ingress for Educates,
 access to the local image registry will still by default be insecure.
 
 If you want access to the local image registry to also be secure, you need
-to copy the original certificate and private key into the
+to also copy the original wildcard certificate and private key into the
 ``educates-resources`` directory before the image local image registry is
 created.
 
@@ -125,7 +125,7 @@ cp $HOME/.letsencrypt/config/live/${INGRESS_DOMAIN}/fullchain.pem educates-resou
 cp $HOME/.letsencrypt/config/live/${INGRESS_DOMAIN}/privkey.pem educates-resources/${INGRESS_DOMAIN}-tls.key
 ```
 
-If you need to make the local iamge registry accessible on your local
+If you need to make the local image registry accessible on your local
 network so you can push images to it from another machine, you can add:
 
 ```
