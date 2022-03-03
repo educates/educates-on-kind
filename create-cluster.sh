@@ -11,14 +11,7 @@ if [ -f local-settings.env ]; then
 fi
 
 REGISTRY_NAME=${REGISTRY_NAME:-kind-registry}
-
-if [ x"$INGRESS_DOMAIN" != x"" -a \
-     -f "educates-resources/$INGRESS_DOMAIN-tls.crt" -a \
-     -f "educates-resources/$INGRESS_DOMAIN-tls.key" ]; then
-    REGISTRY_PORT=${REGISTRY_PORT:-5443}
-else
-    REGISTRY_PORT=${REGISTRY_PORT:-5000}
-fi
+REGISTRY_PORT=${REGISTRY_PORT:-5001}
 
 SECURITY_POLICIES=${SECURITY_POLICIES:-true}
 KAPP_CONTROLLER=${KAPP_CONTROLLER:-false}
@@ -58,38 +51,6 @@ else
 EOF
 fi
 
-CONTAINERD_CONFIG_PATCHES="containerdConfigPatches: []"
-
-if [ x"$INGRESS_DOMAIN" != x"" ]; then
-    if [ -f "educates-resources/$INGRESS_DOMAIN-tls.crt" -a \
-         -f "educates-resources/$INGRESS_DOMAIN-tls.key" ]; then
-        read -r -d '' CONTAINERD_CONFIG_PATCHES <<EOF || true
-containerdConfigPatches:
-- |-
-  [plugins."io.containerd.grpc.v1.cri".registry.mirrors."registry.$INGRESS_DOMAIN:${REGISTRY_PORT}"]
-    endpoint = ["https://${REGISTRY_NAME}:${REGISTRY_PORT}"]
-  [plugins."io.containerd.grpc.v1.cri".registry.mirrors."localhost:${REGISTRY_PORT}"]
-    endpoint = ["https://${REGISTRY_NAME}:${REGISTRY_PORT}"]
-EOF
-    else
-        read -r -d '' CONTAINERD_CONFIG_PATCHES <<EOF || true
-containerdConfigPatches:
-- |-
-  [plugins."io.containerd.grpc.v1.cri".registry.mirrors."registry.$INGRESS_DOMAIN:${REGISTRY_PORT}"]
-    endpoint = ["http://${REGISTRY_NAME}:${REGISTRY_PORT}"]
-  [plugins."io.containerd.grpc.v1.cri".registry.mirrors."localhost:${REGISTRY_PORT}"]
-    endpoint = ["http://${REGISTRY_NAME}:${REGISTRY_PORT}"]
-EOF
-    fi
-else
-    read -r -d '' CONTAINERD_CONFIG_PATCHES <<EOF || true
-containerdConfigPatches:
-- |-
-  [plugins."io.containerd.grpc.v1.cri".registry.mirrors."localhost:${REGISTRY_PORT}"]
-    endpoint = ["http://${REGISTRY_NAME}:${REGISTRY_PORT}"]
-EOF
-fi
-
 cat <<EOF | kind create cluster --name kind --config=-
 kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
@@ -103,7 +64,12 @@ nodes:
   - containerPort: 443
     hostPort: 443
     protocol: TCP
-${CONTAINERD_CONFIG_PATCHES}
+containerdConfigPatches:
+- |-
+  [plugins."io.containerd.grpc.v1.cri".registry.mirrors."registry.eduk8s.svc.cluster.local:${REGISTRY_PORT}"]
+    endpoint = ["http://${REGISTRY_NAME}:5000"]
+  [plugins."io.containerd.grpc.v1.cri".registry.mirrors."localhost:${REGISTRY_PORT}"]
+    endpoint = ["http://${REGISTRY_NAME}:5000"]
 EOF
 
 # Connect the image registry to the cluster network.
@@ -120,7 +86,7 @@ metadata:
   namespace: kube-public
 data:
   localRegistryHosting.v1: |
-    host: "localhost:${REGISTRY_PORT}"
+    host: "localhost:5000"
     help: "https://kind.sigs.k8s.io/docs/user/local-registry/"
 EOF
 

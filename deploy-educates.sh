@@ -23,6 +23,10 @@ fi
 
 kubectl rollout status deployment/eduk8s-operator -n eduk8s
 
+# Create a service mapping internal service name to external registry.
+
+kubectl create service externalname -n eduk8s registry --external-name host.docker.internal
+
 # Apply system profiles for Educates.
 
 kubectl apply -f educates-resources/default-system-profile.yaml

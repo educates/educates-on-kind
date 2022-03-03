@@ -4,7 +4,7 @@ metadata:
   name: local-development-profile
 spec:
   portal:
-    #image: localhost:5000/eduk8s-portal:latest
+    #image: registry.eduk8s.svc.cluster.local:5001/eduk8s-portal:latest
     credentials:
       admin:
         username: educates
@@ -22,7 +22,7 @@ spec:
     mtu: 1350
   #workshop:
   #  images:
-  #    base-environment:*: localhost:5000/base-environment:latest
-  #    jdk8-environment:*: localhost:5000/jdk8-environment:latest
-  #    jdk11-environment:*: localhost:5000/jdk11-environment:latest
-  #    conda-environment:*: localhost:5000/conda-environment:latest
+  #    base-environment:*: registry.eduk8s.svc.cluster.local:5001/base-environment:latest
+  #    jdk8-environment:*: registry.eduk8s.svc.cluster.local:5001/jdk8-environment:latest
+  #    jdk11-environment:*: registry.eduk8s.svc.cluster.local:5001/jdk11-environment:latest
+  #    conda-environment:*: registry.eduk8s.svc.cluster.local:5001/conda-environment:latest
